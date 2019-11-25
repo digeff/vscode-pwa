@@ -1,9 +1,176 @@
 {
+  "formatter": "prose",
+  "rulesDirectory": [
+    // "node_modules/tslint-microsoft-contrib"
+    // "node_modules/tslint-eslint-rules/dist/rules"
+  ],
+  "defaultSeverity": "warn",
   "rules": {
-    "no-duplicate-variable": true,
+    "indent": [
+      false,
+      "spaces"
+    ],
+    "align": [
+      false,
+      "statements"
+    ],
+    "ban": false,
     "class-name": true,
-    "semicolon": [ "always" ],
-    "triple-equals": true,
-    "no-var-keyword": true
+    "comment-format": [
+      false,
+      "check-space"
+    ],
+    "curly": false,
+    "forin": false,
+    "jsdoc-format": true,
+    "label-position": true,
+    "max-line-length": [
+      false,
+      140
+    ],
+    "no-floating-promises": true,
+    "member-access": false,
+    "member-ordering": [
+      false,
+      {
+        "order": [
+            "static-field",
+            "static-field",
+            "instance-field",
+
+            "constructor",
+            "static-method",
+            "instance-method"
+         ]
+      }
+    ],
+    "quotemark": [false, "single", "avoid-escape"],
+    "no-any": false,
+    "no-arg": true,
+    "no-bitwise": false,
+    "no-conditional-assignment": true,
+    "no-consecutive-blank-lines": false,
+    "no-console": [
+      false
+    ],
+    "no-construct": true,
+    "no-debugger": false,
+    "no-duplicate-variable": true,
+    "no-empty": false,
+    "no-eval": false,
+    "no-inferrable-types": false,
+    "no-internal-module": true,
+    "no-invalid-this": false,
+    "no-require-imports": false,
+    "no-shadowed-variable": false,
+    "no-string-literal": false,
+    "no-switch-case-fall-through": true,
+    "no-trailing-whitespace": false,
+    "no-unused-expression": false,
+    "no-unused-variable": false,
+    "no-use-before-declare": false,
+    "no-var-keyword": true,
+    "no-var-requires": false,
+    "object-literal-sort-keys": false,
+    "one-line": [
+      false,
+      "check-open-brace",
+      "check-catch",
+      "check-else",
+      "check-whitespace"
+    ],
+    "radix": false,
+    "semicolon": [
+      false,
+      "always"
+    ],
+    "switch-default": false,
+    "trailing-comma": false,
+    "triple-equals": [
+      true,
+      "allow-null-check"
+    ],
+    "typedef-whitespace": [
+      true,
+      {
+        "call-signature": "nospace",
+        "index-signature": "nospace",
+        "parameter": "nospace",
+        "property-declaration": "nospace",
+        "variable-declaration": "nospace"
+      }
+    ],
+    "variable-name": [
+      true,
+      "allow-leading-underscore",
+      "ban-keywords"
+    ],
+    "whitespace": [
+      false,
+      "check-branch",
+      "check-decl",
+      "check-operator",
+      "check-module",
+      "check-separator",
+      "check-type"
+      // "check-typecast"
+    ],
+
+
+    // tslint-microsoft-contrib
+    "chai-vague-errors": true,
+    "export-name": false,
+    "use-isnan": true,
+    "jquery-deferred-must-complete": true,
+    "missing-jsdoc": false,
+    "missing-optional-annotation": true,
+    "mocha-avoid-only": true,
+    "no-backbone-get-set-outside-model": true,
+    "no-banned-terms": true,
+    "no-constant-condition": true,
+    "no-control-regex": true,
+    "no-cookies": false,
+    "no-delete-expression": true,
+    "no-document-domain": true,
+    "no-disable-auto-sanitization": true,
+    "no-duplicate-switch-case": true,
+    "no-duplicate-parameter-names": true,
+    "no-exec-script": true,
+    "function-constructor": true,
+    "no-function-expression": true,
+    "no-http-string": false,
+    "no-increment-decrement": false,
+    "no-invalid-regexp": true,
+    "no-for-in": false,
+    "no-multiline-string": false,
+    "no-multiple-var-decl": true,
+    "unnecessary-bind": true,
+    "no-unnecessary-semicolons": true,
+    "no-octal-literal": true,
+    "no-regex-spaces": true,
+    "no-reserved-keywords": false,
+    "no-sparse-arrays": true,
+    "no-string-based-set-immediate": false,
+    "no-string-based-set-interval": false,
+    "no-string-based-set-timeout": false,
+    "no-with-statement": true,
+    "prefer-array-literal": true,
+    "promise-must-complete": false,
+    "react-no-dangerous-html": true,
+    "use-named-parameter": true,
+    "max-func-body-length": [false, 100, {
+      "ignore-parameters-to-function-regex": "describe"
+    }],
+    "no-constructor-vars": false,
+    "typedef": [false,
+      "call-signature",
+      "property-declaration"],
+
+
+    // tslint-eslint-rules
+    "no-irregular-whitespace": false,
+
+    "strict-boolean-expressions": false,
+    "strict-type-predicates": false
   }
 }

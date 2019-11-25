@@ -12,7 +12,9 @@ const sourcemaps = require('gulp-sourcemaps');
 const ts = require('gulp-typescript');
 const rename = require('gulp-rename');
 const merge = require('merge2');
-const tslint = require('gulp-tslint');
+const gulpTslint = require('gulp-tslint');
+const tslint = require('tslint');
+// const eslint = require('gulp-eslint');
 const typescript = require('typescript');
 const vsce = require('vsce');
 const webpack = require('webpack');
@@ -86,7 +88,7 @@ const replaceNamespace = () => replace(/NAMESPACE\((.*?)\)/g, `${namespace}$1`);
 const tsProject = ts.createProject('./tsconfig.json', { typescript });
 const tslintOptions = {
   formatter: 'prose',
-  rulesDirectory: 'node_modules/tslint-microsoft-contrib',
+  // rulesDirectory: 'node_modules/tslint-microsoft-contrib',
 };
 
 gulp.task('clean', () =>
@@ -311,18 +313,22 @@ gulp.task('format', () =>
   gulp
     .src(sources)
     .pipe(filter(tslintFilter))
-    .pipe(tslint({ ...tslintOptions, fix: true }))
-    .pipe(tslint.report({ emitError: false }))
+    .pipe(gulpTslint({ ...tslintOptions, fix: true }))
+    .pipe(gulpTslint.report({ emitError: false }))
     .pipe(gulp.dest('./src')),
 );
 
-gulp.task('lint', () =>
-  gulp
+gulp.task('lint', () => {
+  var program = tslint.Linter.createProgram("./tsconfig.json");
+  return gulp
     .src(sources)
+    // .pipe(eslint())
+    // .pipe(eslint.format())
+    // .pipe(eslint.failAfterError())
     .pipe(filter(tslintFilter))
-    .pipe(tslint(tslintOptions))
-    .pipe(tslint.report()),
-);
+    .pipe(gulpTslint({program}))
+    .pipe(gulpTslint.report());
+});
 
 /**
  * Run a command in the terminal using exec, and wrap it in a promise
