@@ -33,11 +33,11 @@ describe('evaluate', () => {
     await p.logger.evaluateAndLog(`baz();`);
     p.log('');
 
-    p.evaluate(`setTimeout(() => { throw new Error('bar')}, 0)`);
+    await p.evaluate(`setTimeout(() => { throw new Error('bar')}, 0)`);
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `setTimeout(() => { throw new Error('baz')}, 0)` });
+    await p.dap.evaluate({ expression: `setTimeout(() => { throw new Error('baz')}, 0)` });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
@@ -49,7 +49,7 @@ describe('evaluate', () => {
     await p.logger.evaluateAndLog(`window.throwValue({foo: 3, bar: 'baz'})`);
     p.log('');
 
-    p.dap.evaluate({ expression: `setTimeout(() => { window.throwError('error2')}, 0)` });
+    await p.dap.evaluate({ expression: `setTimeout(() => { window.throwError('error2')}, 0)` });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
@@ -59,39 +59,39 @@ describe('evaluate', () => {
   itIntegrates.skip('repl', async ({ r }) => {
     const p = await r.launchUrlAndLoad('index.html');
 
-    p.dap.evaluate({ expression: `42`, context: 'repl' });
+    await p.dap.evaluate({ expression: `42`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `'foo'`, context: 'repl' });
+    await p.dap.evaluate({ expression: `'foo'`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `1234567890n`, context: 'repl' });
+    await p.dap.evaluate({ expression: `1234567890n`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `throw new Error('foo')`, context: 'repl' });
+    await p.dap.evaluate({ expression: `throw new Error('foo')`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `throw {foo: 3, bar: 'baz'};`, context: 'repl' });
+    await p.dap.evaluate({ expression: `throw {foo: 3, bar: 'baz'};`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `throw 42;`, context: 'repl' });
+    await p.dap.evaluate({ expression: `throw 42;`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `{foo: 3}`, context: 'repl' });
+    await p.dap.evaluate({ expression: `{foo: 3}`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `baz();`, context: 'repl' });
+    await p.dap.evaluate({ expression: `baz();`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({
+    await p.dap.evaluate({
       expression: `setTimeout(() => { throw new Error('bar')}, 0); 42`,
       context: 'repl',
     });
@@ -101,7 +101,7 @@ describe('evaluate', () => {
     await p.logger.logOutput(e1);
     p.log('');
 
-    p.dap.evaluate({
+    await p.dap.evaluate({
       expression: `setTimeout(() => { throw new Error('baz')}, 0); 42`,
       context: 'repl',
     });
@@ -113,15 +113,15 @@ describe('evaluate', () => {
 
     await p.addScriptTag('browserify/bundle.js');
 
-    p.dap.evaluate({ expression: `window.throwError('error1')`, context: 'repl' });
+    await p.dap.evaluate({ expression: `window.throwError('error1')`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({ expression: `window.throwValue({foo: 3, bar: 'baz'})`, context: 'repl' });
+    await p.dap.evaluate({ expression: `window.throwValue({foo: 3, bar: 'baz'})`, context: 'repl' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.log('');
 
-    p.dap.evaluate({
+    await p.dap.evaluate({
       expression: `setTimeout(() => { window.throwError('error2')}, 0); 42`,
       context: 'repl',
     });
@@ -136,20 +136,20 @@ describe('evaluate', () => {
 
   itIntegrates('copy', async ({ r }) => {
     const p = await r.launchAndLoad('blank');
-    p.dap.evaluate({ expression: 'var x = "hello"; copy(x)' });
+    await p.dap.evaluate({ expression: 'var x = "hello"; copy(x)' });
     p.log(await p.dap.once('copyRequested'));
-    p.dap.evaluate({ expression: 'copy(123n)' });
+    await p.dap.evaluate({ expression: 'copy(123n)' });
     p.log(await p.dap.once('copyRequested'));
-    p.dap.evaluate({ expression: 'copy(NaN)' });
+    await p.dap.evaluate({ expression: 'copy(NaN)' });
     p.log(await p.dap.once('copyRequested'));
-    p.dap.evaluate({ expression: 'copy({foo: "bar"})' });
+    await p.dap.evaluate({ expression: 'copy({foo: "bar"})' });
     p.log(await p.dap.once('copyRequested'));
     p.assertLog();
   });
 
   itIntegrates('inspect', async ({ r }) => {
     const p = await r.launchAndLoad('blank');
-    p.dap.evaluate({ expression: 'function foo() {}; inspect(foo)\n//# sourceURL=test.js' });
+    await p.dap.evaluate({ expression: 'function foo() {}; inspect(foo)\n//# sourceURL=test.js' });
     p.log(await p.dap.once('revealLocationRequested'));
     p.assertLog();
   });
@@ -167,7 +167,7 @@ describe('evaluate', () => {
       var foo2 = new Foo(2);
     `,
     });
-    p.dap.evaluate({ expression: 'queryObjects(Foo)' });
+    await p.dap.evaluate({ expression: 'queryObjects(Foo)' });
     await p.logger.logOutput(await p.dap.once('output'));
     p.assertLog();
   });
@@ -317,7 +317,7 @@ describe('evaluate', () => {
     const p = await r.launchUrlAndLoad('worker.html');
     p.log('--- Evaluating in page');
     p.log('Pausing...');
-    p.dap.evaluate({ expression: `window.w.postMessage('pause');`, context: 'repl' });
+    await p.dap.evaluate({ expression: `window.w.postMessage('pause');`, context: 'repl' });
     const { threadId: pageThreadId } = await p.dap.once('stopped');
     p.log('Paused');
     const { id: pageFrameId } = (await p.dap.stackTrace({
@@ -327,12 +327,12 @@ describe('evaluate', () => {
       await p.dap.evaluate({ expression: 'self', frameId: pageFrameId }),
       { depth: 0 },
     );
-    p.dap.continue({ threadId: pageThreadId! });
+    await p.dap.continue({ threadId: pageThreadId! });
     await p.dap.once('continued');
     p.log('Resumed');
 
     p.log('--- Evaluating in worker');
-    p.dap.evaluate({ expression: `window.w.postMessage('pauseWorker');`, context: 'repl' });
+    await p.dap.evaluate({ expression: `window.w.postMessage('pauseWorker');`, context: 'repl' });
     const worker = await r.worker();
     const { threadId: workerThreadId } = await worker.dap.once('stopped');
     p.log('Paused');
@@ -343,7 +343,7 @@ describe('evaluate', () => {
       await worker.dap.evaluate({ expression: 'self', frameId: workerFrameId }),
       { depth: 0 },
     );
-    worker.dap.continue({ threadId: workerThreadId! });
+    await worker.dap.continue({ threadId: workerThreadId! });
     await worker.dap.once('continued');
     p.log('Resumed');
 

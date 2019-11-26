@@ -28,7 +28,7 @@ export class ExtensionHostAttacher extends NodeAttacherBase<IExtensionHostConfig
     this.onProgramTerminated({ code: 0, killed: true, restart: true });
 
     if (this.program) {
-      this.program.stop();
+      await this.program.stop();
     }
   }
 
@@ -72,6 +72,7 @@ export class ExtensionHostAttacher extends NodeAttacherBase<IExtensionHostConfig
     });
 
     const program = (this.program = new SubprocessProgram(wd));
+    // tslint:disable-next-line: no-floating-promises
     this.program.stopped.then(result => {
       if (program === this.program) {
         this.onProgramTerminated(result);
@@ -94,10 +95,12 @@ export class ExtensionHostAttacher extends NodeAttacherBase<IExtensionHostConfig
     const watchdog = this.program;
     if (telemetry && watchdog) {
       const code = new TerminalProcess({ processId: telemetry.processId });
+      // tslint:disable-next-line: no-floating-promises
       code.stopped.then(() => watchdog.stop());
-      watchdog.stopped.then(() => {
+      // tslint:disable-next-line: no-floating-promises
+      watchdog.stopped.then(async () => {
         if (!this.restarting) {
-          code.stop();
+          await code.stop();
         }
       });
     }

@@ -25,15 +25,15 @@ describe('sources', () => {
 
   itIntegrates('basic sources', async ({ r }) => {
     const p = await r.launchUrl('inlinescript.html');
-    p.load();
+    await p.load();
     await dumpSource(p, await p.waitForSource('inline'), 'inline');
-    p.addScriptTag('empty.js');
+    await p.addScriptTag('empty.js');
     await dumpSource(p, await p.waitForSource('empty.js'), 'empty.js');
-    p.evaluate('17', 'doesnotexist.js');
+    await p.evaluate('17', 'doesnotexist.js');
     await dumpSource(p, await p.waitForSource('doesnotexist'), 'does not exist');
-    p.addScriptTag('dir/helloworld.js');
+    await p.addScriptTag('dir/helloworld.js');
     await dumpSource(p, await p.waitForSource('helloworld'), 'dir/helloworld');
-    p.evaluate('42', '');
+    await p.evaluate('42', '');
     await dumpSource(p, await p.waitForSource('eval'), 'eval');
     p.log(await p.dap.loadedSources({}), '\nLoaded sources: ');
     p.assertLog();
@@ -41,9 +41,9 @@ describe('sources', () => {
 
   itIntegrates('updated content', async ({ r }) => {
     const p = await r.launchUrlAndLoad('index.html');
-    p.cdp.Runtime.evaluate({ expression: 'content1//# sourceURL=test.js' });
+    await p.cdp.Runtime.evaluate({ expression: 'content1//# sourceURL=test.js' });
     await dumpSource(p, await p.waitForSource('test'), 'test.js');
-    p.cdp.Runtime.evaluate({ expression: 'content2//# sourceURL=test.js' });
+    await p.cdp.Runtime.evaluate({ expression: 'content2//# sourceURL=test.js' });
     await dumpSource(p, await p.waitForSource('test'), 'test.js updated');
     p.log(await p.dap.loadedSources({}), '\nLoaded sources: ');
     p.assertLog();
@@ -51,7 +51,7 @@ describe('sources', () => {
 
   itIntegrates('basic source map', async ({ r }) => {
     const p = await r.launchUrlAndLoad('index.html');
-    p.addScriptTag('browserify/bundle.js');
+    await p.addScriptTag('browserify/bundle.js');
     const sources = await Promise.all([
       p.waitForSource('index.ts'),
       p.waitForSource('module1.ts'),
@@ -64,7 +64,7 @@ describe('sources', () => {
   itIntegrates('waiting for source map', async ({ r }) => {
     const p = await r.launchUrlAndLoad('index.html');
     await p.addScriptTag('browserify/bundle.js');
-    p.dap.evaluate({ expression: `setTimeout(() => { window.throwError('error2')}, 0)` });
+    await p.dap.evaluate({ expression: `setTimeout(() => { window.throwError('error2')}, 0)` });
     await p.logger.logOutput(await p.dap.once('output'));
     p.assertLog();
   });
@@ -78,7 +78,7 @@ describe('sources', () => {
       scriptPaused: 0,
     });
     await p.addScriptTag('browserify/bundle.js');
-    p.dap.evaluate({ expression: `setTimeout(() => { window.throwError('error2')}, 0)` });
+    await p.dap.evaluate({ expression: `setTimeout(() => { window.throwError('error2')}, 0)` });
     await p.logger.logOutput(await p.dap.once('output'));
     p.assertLog();
   });
@@ -86,11 +86,11 @@ describe('sources', () => {
   itIntegrates('url and hash', async ({ r }) => {
     const p = await r.launchUrlAndLoad('index.html');
 
-    p.cdp.Runtime.evaluate({ expression: 'a\n//# sourceURL=foo.js' });
+    await p.cdp.Runtime.evaluate({ expression: 'a\n//# sourceURL=foo.js' });
     await dumpSource(p, await p.waitForSource('foo.js'), 'foo.js');
 
     // Same url, different content => different source.
-    p.cdp.Runtime.evaluate({ expression: 'b\n//# sourceURL=foo.js' });
+    await p.cdp.Runtime.evaluate({ expression: 'b\n//# sourceURL=foo.js' });
     await dumpSource(p, await p.waitForSource('foo.js'), 'foo.js');
 
     // Same url, same content => same sources.
@@ -98,13 +98,13 @@ describe('sources', () => {
     await p.cdp.Runtime.evaluate({ expression: 'b\n//# sourceURL=foo.js' });
 
     // Content matches => maps to file.
-    p.addScriptTag('empty.js');
+    await p.addScriptTag('empty.js');
     await dumpSource(p, await p.waitForSource('empty.js'), 'empty.js');
 
     // Content does not match => debugger script.
     const path = p.workspacePath('web/empty2.js');
     p.adapter.sourceContainer.setFileContentOverrideForTest(path, '123');
-    p.addScriptTag('empty2.js');
+    await p.addScriptTag('empty2.js');
     await dumpSource(p, await p.waitForSource('empty2.js'), 'empty2.js');
 
     p.log(await p.dap.loadedSources({}), '\nLoaded sources: ');

@@ -7,7 +7,7 @@ import { itIntegrates } from '../testIntegrationUtils';
 describe('threads', () => {
   itIntegrates('paused', async ({ r }) => {
     const p = await r.launchUrlAndLoad('index.html');
-    p.cdp.Runtime.evaluate({ expression: 'debugger;' });
+    await p.cdp.Runtime.evaluate({ expression: 'debugger;' });
     await p.dap.once('stopped');
     p.log(await p.dap.threads({}));
     p.assertLog();
@@ -22,7 +22,7 @@ describe('threads', () => {
   describe('stepping', () => {
     itIntegrates('basic', async ({ r }) => {
       const p = await r.launchUrlAndLoad('index.html');
-      p.evaluate(`
+      await p.evaluate(`
         function bar() {
           return 2;
         }
@@ -37,27 +37,27 @@ describe('threads', () => {
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep in');
-      p.dap.stepIn({ threadId });
+      await p.dap.stepIn({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep out');
-      p.dap.stepOut({ threadId });
+      await p.dap.stepOut({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nresume');
-      p.dap.continue({ threadId });
+      await p.dap.continue({ threadId });
       p.log(await p.dap.once('continued'));
       p.assertLog();
     });
@@ -65,26 +65,26 @@ describe('threads', () => {
     itIntegrates('cross thread', async ({ r }) => {
       const p = await r.launchUrlAndLoad('worker.html');
 
-      p.cdp.Runtime.evaluate({
+      await p.cdp.Runtime.evaluate({
         expression: `debugger;\nwindow.w.postMessage('message')\n//# sourceURL=test.js`,
       });
       const { threadId } = p.log(await p.dap.once('stopped'));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep in');
-      p.dap.stepIn({ threadId });
+      await p.dap.stepIn({ threadId });
       p.log(await p.dap.once('continued'));
       const worker = await r.worker();
       const { threadId: secondThreadId } = p.log(await worker.dap.once('stopped'));
       await worker.logger.logStackTrace(secondThreadId);
 
       p.log('\nresume');
-      worker.dap.continue({ threadId: secondThreadId });
+      await worker.dap.continue({ threadId: secondThreadId });
       p.log(await worker.dap.once('continued'));
       p.assertLog();
     });
@@ -92,7 +92,7 @@ describe('threads', () => {
     itIntegrates('cross thread constructor', async ({ r }) => {
       const p = await r.launchUrlAndLoad('index.html');
 
-      p.cdp.Runtime.evaluate({
+      await p.cdp.Runtime.evaluate({
         expression: `
         debugger;
         window.w = new Worker('worker.js');\n//# sourceURL=test.js`,
@@ -101,19 +101,19 @@ describe('threads', () => {
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep in');
-      p.dap.stepIn({ threadId });
+      await p.dap.stepIn({ threadId });
       p.log(await p.dap.once('continued'));
       const worker = await r.worker();
       const { threadId: secondThreadId } = p.log(await worker.dap.once('stopped'));
       await worker.logger.logStackTrace(secondThreadId);
 
       p.log('\nresume');
-      worker.dap.continue({ threadId: secondThreadId });
+      await worker.dap.continue({ threadId: secondThreadId });
       p.log(await worker.dap.once('continued'));
       p.assertLog();
     });
@@ -121,7 +121,7 @@ describe('threads', () => {
     itIntegrates('cross thread skip over tasks', async ({ r }) => {
       const p = await r.launchUrlAndLoad('index.html');
 
-      p.cdp.Runtime.evaluate({
+      await p.cdp.Runtime.evaluate({
         expression: `
         window.p = new Promise(f => window.cb = f);
         debugger;
@@ -137,18 +137,18 @@ describe('threads', () => {
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep in');
-      p.dap.stepIn({ threadId });
+      await p.dap.stepIn({ threadId });
       p.log(await p.dap.once('continued'));
       const { threadId: secondThreadId } = p.log(await p.dap.once('stopped'));
       await p.logger.logStackTrace(secondThreadId);
 
       p.log('\nresume');
-      p.dap.continue({ threadId: secondThreadId });
+      await p.dap.continue({ threadId: secondThreadId });
       p.log(await p.dap.once('continued'));
       p.assertLog();
     });
@@ -156,26 +156,26 @@ describe('threads', () => {
     itIntegrates('cross thread constructor source map', async ({ r }) => {
       const p = await r.launchUrlAndLoad('index.html');
 
-      p.cdp.Runtime.evaluate({
+      await p.cdp.Runtime.evaluate({
         expression: `debugger;\nwindow.w = new Worker('workerSourceMap.js');\n//# sourceURL=test.js`,
       });
       const { threadId } = p.log(await p.dap.once('stopped'));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep in');
-      p.dap.stepIn({ threadId });
+      await p.dap.stepIn({ threadId });
       p.log(await p.dap.once('continued'));
       const worker = await r.worker();
       const { threadId: secondThreadId } = p.log(await worker.dap.once('stopped'));
       await worker.logger.logStackTrace(secondThreadId);
 
       p.log('\nresume');
-      worker.dap.continue({ threadId: secondThreadId });
+      await worker.dap.continue({ threadId: secondThreadId });
       p.log(await worker.dap.once('continued'));
       p.assertLog();
     });
@@ -183,7 +183,7 @@ describe('threads', () => {
     itIntegrates('cross thread source map', async ({ r }) => {
       const p = await r.launchUrlAndLoad('index.html');
 
-      p.cdp.Runtime.evaluate({
+      await p.cdp.Runtime.evaluate({
         expression: `
         window.w = new Worker('workerSourceMap.js');
         debugger;
@@ -193,19 +193,19 @@ describe('threads', () => {
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep over');
-      p.dap.next({ threadId });
+      await  p.dap.next({ threadId });
       p.log(await Promise.all([p.dap.once('continued'), p.dap.once('stopped')]));
       await p.logger.logStackTrace(threadId);
 
       p.log('\nstep in');
-      p.dap.stepIn({ threadId });
+      await p.dap.stepIn({ threadId });
       p.log(await p.dap.once('continued'));
       const worker = await r.worker();
       const { threadId: secondThreadId } = p.log(await worker.dap.once('stopped'));
       await worker.logger.logStackTrace(secondThreadId);
 
       p.log('\nresume');
-      worker.dap.continue({ threadId: secondThreadId });
+      await worker.dap.continue({ threadId: secondThreadId });
       p.log(await worker.dap.once('continued'));
       p.assertLog();
     });
@@ -229,14 +229,14 @@ describe('threads', () => {
       p.log('Pausing on uncaught exceptions');
       await p.dap.setExceptionBreakpoints({ filters: ['uncaught'] });
       await p.evaluate(`setTimeout(() => { try { throw new Error('hello'); } catch (e) {}})`);
-      p.evaluate(`setTimeout(() => { throw new Error('hello'); })`);
+      await p.evaluate(`setTimeout(() => { throw new Error('hello'); })`);
       await waitForPauseOnException(p);
 
       p.log('Pausing on caught exceptions');
       await p.dap.setExceptionBreakpoints({ filters: ['caught'] });
-      p.evaluate(`setTimeout(() => { throw new Error('hello'); })`);
+      await p.evaluate(`setTimeout(() => { throw new Error('hello'); })`);
       await waitForPauseOnException(p);
-      p.evaluate(`setTimeout(() => { try { throw new Error('hello'); } catch (e) {}})`);
+      await p.evaluate(`setTimeout(() => { try { throw new Error('hello'); } catch (e) {}})`);
       await waitForPauseOnException(p);
       p.assertLog();
     });
@@ -252,7 +252,7 @@ describe('threads', () => {
         </script>
       `);
       await p.dap.setExceptionBreakpoints({ filters: ['uncaught'] });
-      p.load();
+      await p.load();
       await waitForPauseOnException(p);
       p.assertLog();
     });

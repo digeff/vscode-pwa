@@ -22,6 +22,7 @@ process.on('exit', () => {
   }
 });
 
+// tslint:disable-next-line: no-floating-promises
 (async () => {
   debugLog('CONNECTED TO TARGET');
   let server: PipeTransport;
@@ -54,7 +55,7 @@ process.on('exit', () => {
     if (object.method === 'Target.attachToTarget') {
       debugLog('ATTACH TO TARGET');
       if (target) {
-        target.close();
+        await target.close();
         target = undefined;
       }
       target = await WebSocketTransport.create(info.inspectorURL, NeverCancelled);
@@ -78,7 +79,7 @@ process.on('exit', () => {
       if (target) {
         const t = target;
         target = undefined;
-        t.close();
+        await t.close();
       } else {
         debugLog('DETACH WITHOUT ATTACH');
       }
@@ -91,8 +92,8 @@ process.on('exit', () => {
     server.send(JSON.stringify({ id: object.id, result }));
   };
 
-  server.onend = () => {
+  server.onend = async () => {
     debugLog('SERVER CLOSED');
-    if (target) target.close();
+    if (target) await target.close();
   };
 })();

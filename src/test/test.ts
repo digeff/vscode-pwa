@@ -35,6 +35,7 @@ export const testFixturesDir = path.join(workspaceFolder, testFixturesDirName);
 
 class Stream extends stream.Duplex {
   _write(chunk: any, encoding: string, callback: (err?: Error) => void): void {
+    // tslint:disable-next-line: no-floating-promises
     Promise.resolve().then().then().then().then().then().then().then().then().then().then().then(() => {
       this.push(chunk, encoding);
       callback();
@@ -190,8 +191,8 @@ export class TestP implements ITestHandle {
     this._cdp = this._connection.createSession(sessionId);
     await this._session._init();
     if (this._target.parent()) {
-      this.dap.configurationDone({});
-      this.dap.attach({});
+      await this.dap.configurationDone({});
+      await this.dap.attach({});
     }
 
     return false;
@@ -200,8 +201,8 @@ export class TestP implements ITestHandle {
   async load() {
     await this.dap.configurationDone({});
     await this.dap.attach({});
-    this._cdp!.Page.enable({});
-    this._cdp!.Page.navigate({ url: this._root._launchUrl! });
+    await this._cdp!.Page.enable({});
+    await this._cdp!.Page.navigate({ url: this._root._launchUrl! });
     await new Promise(f => this._cdp!.Page.on('loadEventFired', f));
     await this._cdp!.Page.disable({});
   }
@@ -251,8 +252,8 @@ export class NodeTestHandle implements ITestHandle {
     this._adapter = adapter;
     await this._session._init();
     if (this._target.parent()) {
-      this.dap.configurationDone({});
-      this.dap.attach({});
+      await this.dap.configurationDone({});
+      await this.dap.attach({});
     }
 
     return true;
@@ -295,6 +296,7 @@ export class TestRoot {
     this._webRoot = path.join(this._workspaceRoot, 'web');
 
     this._root = new Session();
+    // tslint:disable-next-line: no-floating-promises
     this._root.adapterConnection.dap().then(dap => {
       dap.on('initialize', async () => {
         dap.initialized({});
@@ -368,7 +370,7 @@ export class TestRoot {
     this._launchUrl = url;
 
     const tmpLogPath = getLogFileForTest(this._testTitlePath);
-    this._root.dap.launch({
+    await this._root.dap.launch({
       ...chromeLaunchConfigDefaults,
       url,
       runtimeArgs: this._args,
@@ -386,7 +388,7 @@ export class TestRoot {
   async runScript(filename: string, options: Partial<INodeLaunchConfiguration> = {}): Promise<NodeTestHandle> {
     await this.initialize;
     this._launchUrl = path.isAbsolute(filename) ? filename : path.join(testFixturesDir, filename);
-    this._root.dap.launch({
+    await this._root.dap.launch({
       ...nodeLaunchConfigDefaults,
       cwd: path.dirname(testFixturesDir),
       program: this._launchUrl,
@@ -400,7 +402,7 @@ export class TestRoot {
   async attachNode(processId: number, options: Partial<INodeAttachConfiguration> = {}): Promise<NodeTestHandle> {
     await this.initialize;
     this._launchUrl = `process${processId}`;
-    this._root.dap.launch({
+    await this._root.dap.launch({
       ...nodeAttachConfigDefaults,
       processId: `inspector${processId}`,
       ...options,
@@ -435,7 +437,8 @@ export class TestRoot {
 
   async disconnect(): Promise<void> {
     return new Promise<void>(cb => {
-      this.initialize.then(() => {
+      // tslint:disable-next-line: no-floating-promises
+      this.initialize.then(async () => {
         const connection = this._browserLauncher.connectionForTest();
         if (connection) {
           const disposable = connection.onDisconnected(() => {
@@ -445,7 +448,7 @@ export class TestRoot {
         } else {
           cb();
         }
-        this._root.dap.disconnect({});
+        await this._root.dap.disconnect({});
       });
     });
   }

@@ -118,6 +118,7 @@ export class Thread implements VariableStoreDelegate {
     this.replVariables = new VariableStore(this._cdp, this);
     this._serializedOutput = Promise.resolve();
     this._smartStepper = new SmartStepper(this.launchConfig);
+    // tslint:disable-next-line: no-floating-promises
     this._initialize();
   }
 
@@ -317,7 +318,7 @@ export class Thread implements VariableStoreDelegate {
 
     // Report result for repl immediately so that the user could see the expression they entered.
     if (args.context === 'repl') {
-      this._evaluateAndOutput(responsePromise);
+      await this._evaluateAndOutput(responsePromise);
       return { result: '', variablesReference: 0 };
     }
 
@@ -363,16 +364,16 @@ export class Thread implements VariableStoreDelegate {
     }
   }
 
-  private _initialize() {
+  private async _initialize() {
     this._cdp.Runtime.on('executionContextCreated', event => {
       this._executionContextCreated(event.context);
     });
     this._cdp.Runtime.on('executionContextDestroyed', event => {
       this._executionContextDestroyed(event.executionContextId);
     });
-    this._cdp.Runtime.on('executionContextsCleared', () => {
-      this._ensureDebuggerEnabledAndRefreshDebuggerId();
-      this.replVariables.clear();
+    this._cdp.Runtime.on('executionContextsCleared', async () => {
+      await this._ensureDebuggerEnabledAndRefreshDebuggerId();
+      await this.replVariables.clear();
       this._executionContextsCleared();
       const slot = this._claimOutputSlot();
       slot(this._clearDebuggerConsole());
@@ -387,30 +388,30 @@ export class Thread implements VariableStoreDelegate {
       const slot = this._claimOutputSlot();
       slot(await this._formatException(event.exceptionDetails));
     });
-    this._cdp.Runtime.on('inspectRequested', event => {
+    this._cdp.Runtime.on('inspectRequested', async event => {
       if (event.hints['copyToClipboard'])
-        this._copyObjectToClipboard(event.object);
+        await this._copyObjectToClipboard(event.object);
       else if (event.hints['queryObjects'])
-        this._queryObjects(event.object);
+        await this._queryObjects(event.object);
       else
-        this._revealObject(event.object);
+        await this._revealObject(event.object);
     });
-    this._cdp.Runtime.enable({});
+    await this._cdp.Runtime.enable({});
 
     this._cdp.Debugger.on('paused', async event => this._onPaused(event));
     this._cdp.Debugger.on('resumed', () => this._onResumed());
     this._cdp.Debugger.on('scriptParsed', event => this._onScriptParsed(event));
 
-    this._ensureDebuggerEnabledAndRefreshDebuggerId();
-    this._delegate.initialize();
-    this._cdp.Debugger.setAsyncCallStackDepth({ maxDepth: 32 });
+    await this._ensureDebuggerEnabledAndRefreshDebuggerId();
+    await this._delegate.initialize();
+    await this._cdp.Debugger.setAsyncCallStackDepth({ maxDepth: 32 });
     let scriptSkipper = this._delegate.skipFiles();
     if (scriptSkipper) {
       // Note: here we assume that source container does only have a single thread.
       this._sourceContainer.initializeScriptSkipper(scriptSkipper);
       scriptSkipper.setBlackboxSender(this._cdp.Debugger);
     }
-    this._pauseOnScheduledAsyncCall();
+    await this._pauseOnScheduledAsyncCall();
 
     this._dap.thread({
       reason: 'started',
@@ -486,10 +487,10 @@ export class Thread implements VariableStoreDelegate {
     this._executionContexts.clear();
   }
 
-  _ensureDebuggerEnabledAndRefreshDebuggerId() {
+  async _ensureDebuggerEnabledAndRefreshDebuggerId() {
     // There is a bug in Chrome that does not retain debugger id
     // across cross-process navigations. Refresh it upon clearing contexts.
-    this._cdp.Debugger.enable({}).then(response => {
+    await this._cdp.Debugger.enable({}).then(response => {
       if (response)
         Thread._allThreadsByDebuggerId.set(response.debuggerId, this);
     });
@@ -511,7 +512,7 @@ export class Thread implements VariableStoreDelegate {
         event.data.__rewriteAsBreakpoint = true;
       } else {
         await this._pauseOnScheduledAsyncCall();
-        this.resume();
+        await this.resume();
         return;
       }
     }
@@ -520,13 +521,13 @@ export class Thread implements VariableStoreDelegate {
       scheduledPauseOnAsyncCall = event.asyncCallStackTraceId;
       const threads = Array.from(Thread._allThreadsByDebuggerId.values());
       await Promise.all(threads.map(thread => thread._pauseOnScheduledAsyncCall()));
-      this.resume();
+      await this.resume();
       return;
     }
 
     this._pausedDetails = this._createPausedDetails(event);
     if (await this._smartStepper.shouldSmartStep(this._pausedDetails)) {
-      this.stepInto();
+      await this.stepInto();
       return;
     }
 
@@ -865,7 +866,7 @@ export class Thread implements VariableStoreDelegate {
     }
   }
 
-  _onScriptParsed(event: Cdp.Debugger.ScriptParsedEvent) {
+  async _onScriptParsed(event: Cdp.Debugger.ScriptParsedEvent) {
     if (event.url)
       event.url = this._delegate.scriptUrlToUrl(event.url);
 
@@ -911,7 +912,7 @@ export class Thread implements VariableStoreDelegate {
       // If we won't pause before executing this script, still try to load source
       // map and set breakpoints as soon as possible. This is racy against the
       // script execution, but better than nothing.
-      this._getOrStartLoadingSourceMaps(script);
+      await this._getOrStartLoadingSourceMaps(script);
     }
   }
 
@@ -970,7 +971,7 @@ export class Thread implements VariableStoreDelegate {
         continue;
       const uiLocation = await this.rawLocationToUiLocation(this.rawLocation(p.value.value as Cdp.Debugger.Location));
       if (uiLocation)
-        this._sourceContainer.revealUiLocation(uiLocation);
+        await this._sourceContainer.revealUiLocation(uiLocation);
       break;
     }
   }
@@ -1004,7 +1005,7 @@ export class Thread implements VariableStoreDelegate {
     });
     if (response && response.result)
       this._dap.copyRequested({ text: String(response.result.value) });
-    this.cdp().Runtime.releaseObject({objectId: object.objectId});
+      await this.cdp().Runtime.releaseObject({objectId: object.objectId});
   }
 
   async _queryObjects(prototype: Cdp.Runtime.RemoteObject) {

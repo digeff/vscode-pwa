@@ -102,7 +102,7 @@ export class BrowserTargetManager implements Disposable {
     }
   }
 
-  waitForMainTarget(filter?: (target: Cdp.Target.TargetInfo) => boolean): Promise<BrowserTarget | undefined> {
+  async waitForMainTarget(filter?: (target: Cdp.Target.TargetInfo) => boolean): Promise<BrowserTarget | undefined> {
     let callback: (result: BrowserTarget | undefined) => void;
     const promise = new Promise<BrowserTarget | undefined>(f => callback = f);
     const attemptAttach = async ({ targetInfo }: {targetInfo: Cdp.Target.TargetInfo}) => {
@@ -121,20 +121,20 @@ export class BrowserTargetManager implements Disposable {
         callback(undefined);
         return;
       }
-      callback(this._attachedToTarget(targetInfo, response.sessionId, true));
+      callback(await this._attachedToTarget(targetInfo, response.sessionId, true));
     };
 
-    this._browser.Target.setDiscoverTargets({ discover: true });
+    await this._browser.Target.setDiscoverTargets({ discover: true });
     this._browser.Target.on('targetCreated', attemptAttach); // new page
     this._browser.Target.on('targetInfoChanged', attemptAttach); // nav on existing page
-    this._browser.Target.on('detachedFromTarget', event => {
-      this._detachedFromTarget(event.targetId!);
+    this._browser.Target.on('detachedFromTarget', async event => {
+      await this._detachedFromTarget(event.targetId!);
     });
 
     return promise;
   }
 
-  _attachedToTarget(targetInfo: Cdp.Target.TargetInfo, sessionId: Cdp.Target.SessionID, waitingForDebugger: boolean, parentTarget?: BrowserTarget): BrowserTarget {
+  async _attachedToTarget(targetInfo: Cdp.Target.TargetInfo, sessionId: Cdp.Target.SessionID, waitingForDebugger: boolean, parentTarget?: BrowserTarget): Promise<BrowserTarget> {
     const cdp = this._connection.createSession(sessionId);
     const target = new BrowserTarget(this, targetInfo, cdp, parentTarget, waitingForDebugger, target => {
       this._connection.disposeSession(sessionId);
@@ -144,19 +144,19 @@ export class BrowserTargetManager implements Disposable {
       parentTarget._children.set(targetInfo.targetId, target);
 
     cdp.Target.on('attachedToTarget', async event => {
-      this._attachedToTarget(event.targetInfo, event.sessionId, event.waitingForDebugger, target);
+      await this._attachedToTarget(event.targetInfo, event.sessionId, event.waitingForDebugger, target);
     });
     cdp.Target.on('detachedFromTarget', async event => {
-      this._detachedFromTarget(event.targetId!);
+      await this._detachedFromTarget(event.targetId!);
     });
-    cdp.Target.setAutoAttach({ autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
+    await cdp.Target.setAutoAttach({ autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
 
     cdp.Network.setCacheDisabled({ cacheDisabled: this.launchParams.disableNetworkCache })
       .catch(err => logger.info(LogTag.RuntimeTarget, 'Error setting network cache state', err));
 
     // For the 'top-level' page, gather telemetry.
     if (!parentTarget) {
-      this.retrieveBrowserTelemetry(cdp);
+      await this.retrieveBrowserTelemetry(cdp);
     }
 
     if (domDebuggerTypes.has(targetInfo.type))
@@ -167,7 +167,7 @@ export class BrowserTargetManager implements Disposable {
 
     // For targets that we don't report to the system, auto-resume them on our on.
     if (!jsTypes.has(targetInfo.type))
-      cdp.Runtime.runIfWaitingForDebugger({});
+      await cdp.Runtime.runIfWaitingForDebugger({});
 
     return target;
   }
@@ -343,20 +343,20 @@ export class BrowserTarget implements Target {
     return this.isServiceWorker();
   }
 
-  stop() {
+  async stop() {
     // Stop both dedicated and parent service worker scopes for present and future browsers.
-    this._manager.serviceWorkerModel.stopWorker(this.id());
+    await this._manager.serviceWorkerModel.stopWorker(this.id());
     if (!this.parentTarget)
       return;
-    this._manager.serviceWorkerModel.stopWorker(this.parentTarget.id());
+    await this._manager.serviceWorkerModel.stopWorker(this.parentTarget.id());
   }
 
   canRestart() {
     return this._targetInfo.type === 'page';
   }
 
-  restart() {
-    this._cdp.Page.reload({});
+  async restart() {
+    await this._cdp.Page.reload({});
   }
 
   waitingForDebugger(): boolean {

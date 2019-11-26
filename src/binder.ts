@@ -51,12 +51,14 @@ export class Binder implements Disposable {
       this._launchers.add(launcher);
       launcher.onTargetListChanged(() => {
         const targets = this.targetList();
+        // tslint:disable-next-line: no-floating-promises
         this._attachToNewTargets(targets);
         this._detachOrphanThreads(targets);
         this._onTargetListChangedEmitter.fire();
       }, undefined, this._disposables);
     }
 
+    // tslint:disable-next-line: no-floating-promises
     this._dap.then(dap => {
       this._rawTelemetryReporter = new RawTelemetryReporterToDap(dap);
       dap.on('initialize', async clientCapabilities => {
@@ -97,7 +99,7 @@ export class Binder implements Disposable {
 
   private async _boot(params: AnyLaunchConfiguration, dap: Dap.Api) {
     warnNightly(dap);
-    logger.setup(resolveLoggerOptions(dap, params.trace));
+    await logger.setup(resolveLoggerOptions(dap, params.trace));
 
     const cts = CancellationTokenSource.withTimeout(params.timeout);
 
@@ -131,6 +133,7 @@ export class Binder implements Disposable {
       this._detachOrphanThreads(this.targetList(), { restart: result.restart });
       this._onTargetListChangedEmitter.fire();
       if (!--this._terminationCount) {
+        // tslint:disable-next-line: no-floating-promises
         this._dap.then(dap => dap.terminated({ restart: result.restart }));
       }
     }, undefined, this._disposables);
@@ -200,15 +203,15 @@ export class Binder implements Disposable {
     const dap = await connection.dap();
     const debugAdapter = new DebugAdapter(dap, this._launchParams && this._launchParams.rootPath || undefined,
       target.sourcePathResolver(), this._launchParams!, this._rawTelemetryReporter!);
-    const thread = debugAdapter.createThread(target.name(), cdp, target);
+    const thread = await debugAdapter.createThread(target.name(), cdp, target);
     this._threads.set(target, {thread, debugAdapter});
     const startThread = async () => {
       await debugAdapter.launchBlocker();
-      cdp.Runtime.runIfWaitingForDebugger({});
+      await cdp.Runtime.runIfWaitingForDebugger({});
       return {};
     };
     if (await this._delegate.initAdapter(debugAdapter, target)) {
-      startThread();
+      await startThread();
     } else {
       dap.on('attach', startThread);
       dap.on('disconnect', async () => {
@@ -241,13 +244,13 @@ export class Binder implements Disposable {
     this._releaseTarget(target,);
   }
 
-  _attachToNewTargets(targets: Target[]) {
+  async _attachToNewTargets(targets: Target[]) {
     for (const target of targets.values()) {
       if (!target.waitingForDebugger())
         continue;
       const thread = this._threads.get(target);
       if (!thread)
-        this.attach(target);
+      await this.attach(target);
     }
   }
 

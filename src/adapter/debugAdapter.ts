@@ -253,7 +253,7 @@ export class DebugAdapter {
     return errors.createSilentError(localize('error.threadNotFound', 'Thread not found'));
   }
 
-  createThread(threadName: string, cdp: Cdp.Api, delegate: ThreadDelegate): Thread {
+  async createThread(threadName: string, cdp: Cdp.Api, delegate: ThreadDelegate): Thread {
     this._thread = new Thread(
       this.sourceContainer,
       threadName,
@@ -264,8 +264,8 @@ export class DebugAdapter {
       this.breakpointManager,
     );
     for (const breakpoint of this._customBreakpoints)
-      this._thread.updateCustomBreakpoint(breakpoint, true);
-    this._thread.setPauseOnExceptionsState(this._pauseOnExceptionsState);
+      await this._thread.updateCustomBreakpoint(breakpoint, true);
+      await this._thread.setPauseOnExceptionsState(this._pauseOnExceptionsState);
     this.breakpointManager.setThread(this._thread);
     return this._thread;
   }
@@ -325,7 +325,7 @@ export class DebugAdapter {
         columnNumber: params.column || 1,
       };
       const newUiLocation = await this.sourceContainer.preferredUiLocation(originalUiLocation);
-      this.sourceContainer.revealUiLocation(newUiLocation);
+      await this.sourceContainer.revealUiLocation(newUiLocation);
     }
     return {};
   }
