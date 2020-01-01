@@ -402,6 +402,11 @@ export interface IChromeLaunchConfiguration extends IChromeBaseConfiguration {
    * with your default user profile.
    */
   userDataDir: string | boolean;
+
+  /**
+   * The debug adapter is running elevated. Launch Chrome unelevated to avoid the security restrictions of running Chrome elevated
+   */
+  launchUnelevatedFlag?: boolean;
 }
 
 /**
@@ -559,7 +564,7 @@ export const nodeAttachConfigDefaults: INodeAttachConfiguration = {
   processId: '',
 };
 
-export function defaultSourceMapPathOverrides(webRoot: string): { [key: string]: string; } {
+export function defaultSourceMapPathOverrides(webRoot: string): { [key: string]: string } {
   return {
     'webpack://?:*/*': '*',
     'webpack:///./~/*': `${webRoot}/node_modules/*`,
