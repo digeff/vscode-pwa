@@ -204,7 +204,7 @@ export class Breakpoint {
     });
     const promises: Promise<void>[] = [];
     for (const workspaceLocation of workspaceLocations) {
-      const url = this._manager._sourceContainer.sourcePathResolver.absolutePathToUrl(
+      const url = await this._manager._sourceContainer.sourcePathResolver.absolutePathToUrl(
         workspaceLocation.absolutePath,
       );
       if (url) promises.push(this._setByUrl(thread, url, workspaceLocation));
@@ -224,7 +224,7 @@ export class Breakpoint {
     const url = source
       ? source.url()
       : this._source.path
-      ? this._manager._sourceContainer.sourcePathResolver.absolutePathToUrl(this._source.path)
+      ? await this._manager._sourceContainer.sourcePathResolver.absolutePathToUrl(this._source.path)
       : undefined;
     if (!url) return;
     await this._setByUrl(thread, url, lineColumn);

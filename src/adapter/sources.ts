@@ -458,14 +458,14 @@ export class SourceContainer {
     return output;
   }
 
-  addSource(
+  async addSource(
     url: string,
     contentGetter: ContentGetter,
     sourceMapUrl?: string,
     inlineSourceRange?: InlineScriptOffset,
     contentHash?: string,
-  ): Source {
-    const absolutePath = this.sourcePathResolver.urlToAbsolutePath({ url });
+  ): Promise<Source> {
+    const absolutePath = await this.sourcePathResolver.urlToAbsolutePath({ url });
     const source = new Source(
       this,
       url,
@@ -565,7 +565,10 @@ export class SourceContainer {
       let source = this._sourceMapSourcesByUrl.get(resolvedUrl);
       const isNew = !source;
       if (!source) {
-        const absolutePath = this.sourcePathResolver.urlToAbsolutePath({ url: resolvedUrl, map });
+        const absolutePath = await this.sourcePathResolver.urlToAbsolutePath({
+          url: resolvedUrl,
+          map,
+        });
         // Note: we can support recursive source maps here if we parse sourceMapUrl comment.
         source = new Source(
           this,
