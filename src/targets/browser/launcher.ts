@@ -124,7 +124,7 @@ export async function launch(
     clientCapabilities.supportsLaunchUnelevatedProcessRequest && options.launchUnelevatedFlag
   );
   if (launchUnelevated && !usePipe && suggestedPort && suggestedPort !== 0) {
-    const pid = (await launchUnelevatedChrome(dap, executablePath, browserArguments)) || 0;
+    const pid = await launchUnelevatedChrome(dap, executablePath, browserArguments);
     browserProcess = new BrowserProcessByPid(pid);
   } else {
     browserProcess = childProcess.spawn(executablePath, browserArguments, {
